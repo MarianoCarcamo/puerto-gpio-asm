@@ -36,6 +36,35 @@ endfun Pin_init
 
 defun Pin_configura
     // R0: self, R1: config
+    push {R4,R5,LR}
+    ands R2,R1,#0xF
+    cmp R2,#8
+    bne 0f
+    push {R0,R1}
+    lsrs R1,#4
+    bl Pin_escribe
+    pop {R0,R1}
+0:    
+    ldr R2,[R0,#Pin__puerto]
+    ldr R3,[R0,#Pin__numero]
+    cmp R3,#7
+    bls 0f
+    subs R3,#8
+    movs R0,#CRH
+    b 1f
+0:
+    movs R0, #CRL
+1:
+    ldr R5,[R2,R0]
+    lsls R3,#2
+    movs R4,#0xF
+    lsls R4,R3
+    bics R5,R4
+    ands R1,#0xF
+    lsls R1,R3
+    orrs R5,R1
+    str R5,[R2,R0]
+    pop {R4,R5,PC}
     bx lr
 endfun Pin_configura
 
@@ -43,16 +72,37 @@ endfun Pin_configura
 
 defun Pin_escribe
     // R0: self, R1: valor
+    ldr R2, [R0,#Pin__puerto]
+    ldr R3, [R0,#Pin__numero]
+    movs R0,#1
+    lsls R0,R3
+    cbz R1,0f
+    str R0,[R2,#BSRR]
+    b 1f
+0:
+    str R0,[R2,#BRR]
+1:
     bx lr
 endfun Pin_escribe
 
 defun Pin_lee
     // R0: self
+    ldr R1,[R0,#Pin__puerto]
+    ldr R2,[R0,#Pin__numero]
+    ldr R0,[R1,#IDR]
+    lsrs R0,R2
+    ands R0,#1
     bx lr
     // R0: valor
 endfun Pin_lee
+
 defun Pin_leeSalida
     // R0: self
+    ldr R1,[R0,#Pin__puerto]
+    ldr R2,[R0,#Pin__numero]
+    ldr R0,[R1,#ODR]
+    lsrs R0,R2
+    ands R0,#1
     bx lr
     // R0: valor
 endfun Pin_leeSalida
